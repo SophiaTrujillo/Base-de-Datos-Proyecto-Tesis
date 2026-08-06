@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\TareaMoodleController; 
 use App\Http\Controllers\ConversacionController; 
 use App\Http\Controllers\MensajeController; 
+use App\Http\Controllers\CarnetController;
 
 /* 
 |-------------------------------------------------------------------------- 
@@ -45,5 +46,13 @@ Route::get('/tareas', [TareaMoodleController::class, 'index']);
 // Chat 
 Route::get('/conversaciones', [ConversacionController::class, 'index']); 
 Route::get('/mensajes', [MensajeController::class, 'index']); 
+
+// Carnet
+Route::get('/carnets', [CarnetController::class, 'index']);
+Route::post('/carnets', [CarnetController::class, 'store']);
+Route::get('/carnets/{id}', [CarnetController::class, 'show']);
+Route::put('/carnets/{id}', [CarnetController::class, 'update']);
+Route::delete('/carnets/{id}', [CarnetController::class, 'destroy']);
+Route::get('/mi-carnet', [CarnetController::class, 'miCarnet']);
 
 });

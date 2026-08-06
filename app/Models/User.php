@@ -60,4 +60,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notificacion::class);
     }
+
+    public function carnet()
+    {
+        return $this->hasOne(Carnet::class, 'usuario_id');
+    }
 }
