@@ -7,44 +7,101 @@ use App\Models\Club;
 
 class ClubController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Mostrar todos los clubes
     public function index()
     {
-        $clubes = Club::with('responsable')->get();
+        $clubes = Club::with([
+            'responsable:id,nombres,apellidos,correo,fotografia'
+        ])->get();
+
         return response()->json($clubes);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Crear un club
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'required|string',
+            'responsable_id' => 'required|exists:users,id',
+            'estado' => 'nullable|boolean',
+        ]);
+
+        $club = Club::create([
+            'nombre' => $request->nombre,
+            'descripcion' => $request->descripcion,
+            'responsable_id' => $request->responsable_id,
+            'estado' => $request->estado ?? true,
+        ]);
+
+        return response()->json([
+            'mensaje' => 'Club creado correctamente.',
+            'club' => $club->load('responsable')
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Mostrar un club
     public function show(string $id)
     {
-        //
+        $club = Club::with([
+            'responsable:id,nombres,apellidos,correo,fotografia'
+        ])->find($id);
+
+        if (!$club) {
+            return response()->json([
+                'mensaje' => 'Club no encontrado.'
+            ], 404);
+        }
+
+        return response()->json($club);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Actualizar un club
     public function update(Request $request, string $id)
     {
-        //
+        $club = Club::find($id);
+
+        if (!$club) {
+            return response()->json([
+                'mensaje' => 'Club no encontrado.'
+            ], 404);
+        }
+
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'required|string',
+            'responsable_id' => 'required|exists:users,id',
+            'estado' => 'nullable|boolean',
+        ]);
+
+        $club->update([
+            'nombre' => $request->nombre,
+            'descripcion' => $request->descripcion,
+            'responsable_id' => $request->responsable_id,
+            'estado' => $request->estado ?? $club->estado,
+        ]);
+
+        return response()->json([
+            'mensaje' => 'Club actualizado correctamente.',
+            'club' => $club->load('responsable')
+        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Eliminar un club
     public function destroy(string $id)
     {
-        //
+        $club = Club::find($id);
+
+        if (!$club) {
+            return response()->json([
+                'mensaje' => 'Club no encontrado.'
+            ], 404);
+        }
+
+        $club->delete();
+
+        return response()->json([
+            'mensaje' => 'Club eliminado correctamente.'
+        ]);
     }
 }

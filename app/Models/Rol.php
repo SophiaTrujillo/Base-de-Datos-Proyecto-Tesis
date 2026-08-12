@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Rol extends Model
 {
+    protected $table = 'roles';
+
     protected $fillable = [
         'nombre',
     ];
-
 
     /**
      * Un rol puede tener muchos usuarios.
@@ -18,7 +19,6 @@ class Rol extends Model
     {
         return $this->hasMany(User::class);
     }
-
 
     /**
      * Un rol puede tener muchos permisos.

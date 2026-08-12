@@ -7,49 +7,97 @@ use App\Models\Conversacion;
 
 class ConversacionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    // Mostrar las conversaciones del usuario autenticado
+    public function index(Request $request)
     {
-        $conversaciones = Conversacion::with([
-        'usuario1',
-        'usuario2',
-        'mensajes'
-    ])->get();
+        $usuario = $request->user();
 
-    return response()->json($conversaciones);
+        $conversaciones = Conversacion::with([
+            'usuario1:id,nombres,apellidos,correo,fotografia',
+            'usuario2:id,nombres,apellidos,correo,fotografia',
+            'mensajes'
+        ])
+        ->where('usuario1_id', $usuario->id)
+        ->orWhere('usuario2_id', $usuario->id)
+        ->get();
+
+        return response()->json($conversaciones);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Crear una conversación
     public function store(Request $request)
     {
-        //
+        $usuario = $request->user();
+
+        $request->validate([
+            'usuario2_id' => 'required|exists:users,id',
+        ]);
+
+        // No permitir conversación consigo mismo
+        if ($usuario->id == $request->usuario2_id) {
+            return response()->json([
+                'mensaje' => 'No puedes crear una conversación contigo mismo.'
+            ], 422);
+        }
+
+        // Comprobar si ya existe
+        $conversacion = Conversacion::where(function ($query) use ($usuario, $request) {
+            $query->where('usuario1_id', $usuario->id)
+                  ->where('usuario2_id', $request->usuario2_id);
+        })
+        ->orWhere(function ($query) use ($usuario, $request) {
+            $query->where('usuario1_id', $request->usuario2_id)
+                  ->where('usuario2_id', $usuario->id);
+        })
+        ->first();
+
+        if ($conversacion) {
+            return response()->json([
+                'mensaje' => 'La conversación ya existe.',
+                'conversacion' => $conversacion->load([
+                    'usuario1',
+                    'usuario2'
+                ])
+            ]);
+        }
+
+        $conversacion = Conversacion::create([
+            'usuario1_id' => $usuario->id,
+            'usuario2_id' => $request->usuario2_id,
+        ]);
+
+        return response()->json([
+            'mensaje' => 'Conversación creada correctamente.',
+            'conversacion' => $conversacion->load([
+                'usuario1',
+                'usuario2'
+            ])
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    // Mostrar una conversación
+    public function show(Request $request, string $id)
     {
-        //
-    }
+        $usuario = $request->user();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        $conversacion = Conversacion::with([
+            'usuario1',
+            'usuario2',
+            'mensajes.emisor'
+        ])
+        ->where('id', $id)
+        ->where(function ($query) use ($usuario) {
+            $query->where('usuario1_id', $usuario->id)
+                  ->orWhere('usuario2_id', $usuario->id);
+        })
+        ->first();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        if (!$conversacion) {
+            return response()->json([
+                'mensaje' => 'Conversación no encontrada.'
+            ], 404);
+        }
+
+        return response()->json($conversacion);
     }
 }

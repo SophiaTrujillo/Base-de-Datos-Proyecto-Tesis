@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notificacion extends Model
 {
+    protected $table = 'notificaciones';
+
     protected $fillable = [
         'usuario_id',
         'titulo',
@@ -15,7 +17,6 @@ class Notificacion extends Model
         'fecha',
     ];
 
-
     /**
      * Una notificación pertenece a un usuario.
      */
@@ -23,4 +24,4 @@ class Notificacion extends Model
     {
         return $this->belongsTo(User::class);
     }
-}
+}    

@@ -7,44 +7,105 @@ use App\Models\Notificacion;
 
 class NotificacionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Mostrar todas las notificaciones
     public function index()
     {
-        $notificaciones = Notificacion::with('usuario')->get();
+        $notificaciones = Notificacion::with([
+            'usuario:id,nombres,apellidos,correo'
+        ])->get();
+
         return response()->json($notificaciones);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Crear una notificación
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'usuario_id' => 'required|exists:users,id',
+            'titulo' => 'required|string|max:255',
+            'mensaje' => 'required|string',
+            'tipo' => 'required|string|max:100',
+            'leida' => 'nullable|boolean',
+            'fecha' => 'required|date',
+        ]);
+
+        $notificacion = Notificacion::create([
+            'usuario_id' => $request->usuario_id,
+            'titulo' => $request->titulo,
+            'mensaje' => $request->mensaje,
+            'tipo' => $request->tipo,
+            'leida' => $request->leida ?? false,
+            'fecha' => $request->fecha,
+        ]);
+
+        return response()->json([
+            'mensaje' => 'Notificación creada correctamente.',
+            'notificacion' => $notificacion->load('usuario')
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Mostrar una notificación
     public function show(string $id)
     {
-        //
+        $notificacion = Notificacion::with('usuario')->find($id);
+
+        if (!$notificacion) {
+            return response()->json([
+                'mensaje' => 'Notificación no encontrada.'
+            ], 404);
+        }
+
+        return response()->json($notificacion);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Actualizar una notificación
     public function update(Request $request, string $id)
     {
-        //
+        $notificacion = Notificacion::find($id);
+
+        if (!$notificacion) {
+            return response()->json([
+                'mensaje' => 'Notificación no encontrada.'
+            ], 404);
+        }
+
+        $request->validate([
+            'titulo' => 'required|string|max:255',
+            'mensaje' => 'required|string',
+            'tipo' => 'required|string|max:100',
+            'leida' => 'nullable|boolean',
+            'fecha' => 'required|date',
+        ]);
+
+        $notificacion->update([
+            'titulo' => $request->titulo,
+            'mensaje' => $request->mensaje,
+            'tipo' => $request->tipo,
+            'leida' => $request->leida ?? $notificacion->leida,
+            'fecha' => $request->fecha,
+        ]);
+
+        return response()->json([
+            'mensaje' => 'Notificación actualizada correctamente.',
+            'notificacion' => $notificacion->load('usuario')
+        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Eliminar una notificación
     public function destroy(string $id)
     {
-        //
+        $notificacion = Notificacion::find($id);
+
+        if (!$notificacion) {
+            return response()->json([
+                'mensaje' => 'Notificación no encontrada.'
+            ], 404);
+        }
+
+        $notificacion->delete();
+
+        return response()->json([
+            'mensaje' => 'Notificación eliminada correctamente.'
+        ]);
     }
 }
